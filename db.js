@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const { STRING } = Sequelize;
 const config = {
   logging: false,
@@ -18,10 +19,13 @@ const User = conn.define('user', {
   password: STRING,
 });
 
-User.prototype.generateToken = function () {
-  return { token: this.id };
-};
+User.beforeCreate(async (user) => {
+  if (user.accessLevel > 10 && user.username !== 'Boss') {
+    throw new Error("You can't grant this user an access level above 10!");
+  }
+});
 
+// Token exchange >>> takes the encoded text for POST and decoded to match the req.body in database
 User.byToken = async (token) => {
   try {
     const payload = await jwt.verify(token, process.env.JWT);
@@ -49,7 +53,9 @@ User.authenticate = async ({ username, password }) => {
     },
   });
 
+  // Token Logic
   if (user.id) {
+    // Token generator
     const token = await jwt.sign({ id: user.id }, process.env.JWT);
     console.log('token >>> ', token);
     return token;
