@@ -1,12 +1,27 @@
 const express = require('express');
 const app = express();
+
 app.use(express.json());
 const {
-  models: { User },
+  models: { User, Note },
 } = require('./db');
 const path = require('path');
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+app.get('/api/users/:id/notes', async (req, res, next) => {
+  try {
+    const userNote = await User.findByPk(req.params.id, {
+      include: [Note],
+    });
+    if (userNote) {
+      res.json(userNote);
+      return;
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.post('/api/auth', async (req, res, next) => {
   try {

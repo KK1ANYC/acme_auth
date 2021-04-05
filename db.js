@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { STRING } = Sequelize;
+const { STRING, TEXT } = Sequelize;
 const config = {
   logging: false,
 };
@@ -18,6 +18,13 @@ const User = conn.define('user', {
   username: STRING,
   password: STRING,
 });
+
+const Note = conn.define('note', {
+  text: TEXT,
+});
+
+User.hasMany(Note);
+Note.belongsTo(User);
 
 // Token exchange >>> takes the encoded text for POST and decoded to match the req.body in database
 User.byToken = async (token) => {
@@ -83,6 +90,18 @@ const syncAndSeed = async () => {
   const [lucy, moe, larry] = await Promise.all(
     credentials.map((credential) => User.create(credential))
   );
+
+  const notes = [
+    { text: 'hello world' },
+    { text: 'reminder to buy groceries' },
+    { text: 'reminder to do laundry' },
+  ];
+  const [note1, note2, note3] = await Promise.all(
+    notes.map((note) => Note.create(note))
+  );
+  await lucy.setNotes(note1);
+  await moe.setNotes([note2, note3]);
+
   return {
     users: {
       lucy,
@@ -96,5 +115,6 @@ module.exports = {
   syncAndSeed,
   models: {
     User,
+    Note,
   },
 };
