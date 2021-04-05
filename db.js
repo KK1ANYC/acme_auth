@@ -19,12 +19,6 @@ const User = conn.define('user', {
   password: STRING,
 });
 
-User.beforeCreate(async (user) => {
-  if (user.accessLevel > 10 && user.username !== 'Boss') {
-    throw new Error("You can't grant this user an access level above 10!");
-  }
-});
-
 // Token exchange >>> takes the encoded text for POST and decoded to match the req.body in database
 User.byToken = async (token) => {
   try {
@@ -65,6 +59,19 @@ User.authenticate = async ({ username, password }) => {
   error.status = 401;
   throw error;
 };
+
+// beforeCreate hash password...
+User.beforeCreate(async (user) => {
+  // if (user.accessLevel > 10 && user.username !== 'Boss') {
+  //   throw new Error("You can't grant this user an access level above 10!");
+  // }
+  let saltRound = 5;
+  const hash = await bcrypt.hash(user.password, saltRound);
+  // console.log(user);
+  console.log('hashed >>> ', hash);
+  const correct = await bcrypt.compare(user.password, hash);
+  console.log(correct);
+});
 
 const syncAndSeed = async () => {
   await conn.sync({ force: true });
