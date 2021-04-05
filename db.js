@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize');
+const jwt = require('jsonwebtoken');
 const { STRING } = Sequelize;
 const config = {
   logging: false,
@@ -17,9 +18,16 @@ const User = conn.define('user', {
   password: STRING,
 });
 
+User.prototype.generateToken = function () {
+  return { token: this.id };
+};
+
 User.byToken = async (token) => {
   try {
-    const user = await User.findByPk(token);
+    const payload = await jwt.verify(token, process.env.JWT);
+    console.log('byToken payload', payload);
+
+    const user = await User.findByPk(payload.id);
     if (user) {
       return user;
     }
@@ -40,9 +48,13 @@ User.authenticate = async ({ username, password }) => {
       password,
     },
   });
-  if (user) {
-    return user.id;
+
+  if (user.id) {
+    const token = await jwt.sign({ id: user.id }, process.env.JWT);
+    console.log('token >>> ', token);
+    return token;
   }
+
   const error = Error('bad credentials');
   error.status = 401;
   throw error;

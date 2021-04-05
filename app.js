@@ -10,7 +10,9 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.post('/api/auth', async (req, res, next) => {
   try {
-    res.send({ token: await User.authenticate(req.body) });
+    const token = await User.authenticate(req.body);
+    console.log('token from POST >>>', token);
+    res.send({ token });
   } catch (ex) {
     next(ex);
   }
@@ -18,6 +20,7 @@ app.post('/api/auth', async (req, res, next) => {
 
 app.get('/api/auth', async (req, res, next) => {
   try {
+    console.log('GET ROUTE', req.headers.authorization);
     res.send(await User.byToken(req.headers.authorization));
   } catch (ex) {
     next(ex);
